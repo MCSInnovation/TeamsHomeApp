@@ -1,0 +1,71 @@
+{
+    "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.7/MicrosoftTeams.schema.json",
+    "manifestVersion": "1.7",
+    "version": "1.0.0",
+    "id": "0dae5abe-ae9f-42b3-9192-1cac99868ae0",
+    "packageName": "Teams Home",
+    "developer": {
+        "name": "Microsoft Consulting Services",
+        "websiteUrl": "https://www.microsoft.com/en-us/msservices/consulting",
+        "privacyUrl": "https://www.microsoft.com/privacy",
+        "termsOfUseUrl": "https://www.microsoft.com/termsofuse"
+    },
+    "icons": {
+        "color": "color.png",
+        "outline": "outline.png"
+    },
+    "name": {
+        "short": "Teams Home",
+        "full": "This is an application to demonstrate a home app for Teams"
+    },
+    "description": {
+        "short": "Teams Home",
+        "full": "This is an application to demonstrate a home application for Microsoft Teams in English."
+    },
+    "accentColor": "#FFFFFF",
+    "staticTabs": [
+        {
+            "entityId": "101",
+            "name": "Home",
+            "contentUrl": "https://<TeamsHomeSiteURL>/_layouts/15/teamslogon.aspx?spfx=true&dest=<TeamsHomeSiteRelative>",
+            "websiteUrl": "https://<TeamsHomeSiteURL>",
+            "scopes": [
+                "personal"
+            ]
+        },
+        {
+            "entityId": "102",
+            "name": "QuickGuide",
+            "contentUrl": "https://<TeamsHomeSiteURL>/_layouts/15/teamslogon.aspx?spfx=true&dest=<TeamsHomeSiteRelative>/SitePages/QuickGuide.aspx",
+            "websiteUrl": "https://<TeamsHomeSiteURL>/SitePages/QuickGuide.aspx",
+            "scopes": [
+                "personal"
+            ]
+        },
+        {
+            "entityId": "103",
+            "name": "Videos",
+            "contentUrl": "https://support.office.com/en-us/article/videoutbildning-f%c3%b6r-microsoft-teams-4f108e54-240b-4351-8084-b1089f0d21d7?ui=sv-SE&rs=sv-SE&ad=SE",
+            "websiteUrl": "https://support.office.com/en.us/article/videoutbildning-f%c3%b6r-microsoft-teams-4f108e54-240b-4351-8084-b1089f0d21d7?ui=sv-SE&rs=sv-SE&ad=SEk",
+            "scopes": [
+                "personal"
+            ]
+        }
+    ],
+    "permissions": [
+        "identity",
+        "messageTeamMembers"
+    ],
+    "validDomains": [
+        "docs.microsoft.com",
+        "adoption.microsoft.com",
+        "microsoft.sharepoint.com",
+        "support.office.com",
+        "<TeamsHomeSiteDomain>",
+        "*.office.com"
+    ],
+    "webApplicationInfo": {
+        "id": "00000003-0000-0ff1-ce00-000000000000",
+        "resource": "https://<TeamsHomeSiteURL>"
+    }
+}
