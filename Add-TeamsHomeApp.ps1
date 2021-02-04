@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     This is a script to deploy the Team Home app and supporting content
 
@@ -7,17 +7,18 @@
     populate it wil sepcific Teams related content to enable end users to better understand
     the intent and useage of Teams.
 
-    A Teams app will be produced that can then be sideloaded by a user to test or deploy
-    throughout a tenant via a policy in Teams.
+    A Teams app will be produced that can then be sideloaded by a user to test or deployed
+    throughout a tenant via policy in Teams.
 
 .EXAMPLE
-    Add-TeamsHomeApp.ps1 -url https://contoso.sharepoint.com/sites/TeamsHome -Language en -TeamsHomeManagerEmail TeamManager@contoso.onmicrosoft.com -LogoFilePath "C:\TeamsApp\CompanyLogo.PNG"
+    .\Add-TeamsHomeApp.ps1 -url https://contoso.sharepoint.com/sites/TeamsHome -Language en -TeamsHomeManagerEmail TeamManager@contoso.onmicrosoft.com -LogoFilePath "C:\TeamsApp\CompanyLogo.PNG" -UpdateTeamsAppDetails
     
 .INPUTS
     -Url                   - The desired url of the Team Home app content
     -TeamsHomeManagerEmail - This must be the tenant email address of the contact for the application
     -Language              - The desired language for the site.
     -LogoFilePath          - The full Windows path to a .PNG file to be used for the logos (optional)
+    -UpdateTeamsAppDetails - Change the name and description of the app before uploading the package (optional)
 
 .OUTPUTS
     Configured SPO site
@@ -26,13 +27,14 @@
 -----------------------------------------------------------------------------------------------------------------------------------
 Script name : Add-TeamsHomeApp.ps1
 Authors : Microsoft
-Version : V1.0
-Dependencies : SharePoint PnP PowerShell Online or PnP PowerShell modules
+Version : V2.0
+Dependencies : PnP PowerShell modules
 -----------------------------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------------------------
 Version Changes:
 Date:       Version: Changed By:     Info:
 01/12/2020  V1.0     Microsoft       Initial script creation
+04/02/2021  V2.0     Microsoft       Updates for PnP.PowerShell module
 
 -----------------------------------------------------------------------------------------------------------------------------------
 DISCLAIMER
@@ -59,7 +61,10 @@ Param(
     [string]$Language,
 
     [Parameter(Mandatory = $false, HelpMessage = "Where is the PNG logo file you want to work with? It must be a PNG formatted image")]
-    [string]$LogoFilePath
+    [string]$LogoFilePath,
+
+    [Parameter(Mandatory = $false, HelpMessage = "Use this switch to control the App Name and Descriptions that are used for the deployment")]
+    [switch]$UpdateTeamsAppDetails
 )
 
 #If the host is an appropriate PowerShell version, set reusethreading.
@@ -67,7 +72,7 @@ if ($Host.Version.Major -gt 1) {$Host.Runspace.ThreadOptions = "ReuseThread"}
 
 #Inform the user how long the operation took. This is the start date/time.
 $dtStartTime = Get-Date
-$Version = "V1.0"
+$Version = "V2.0"
  
 Write-Host "#################################################################################" -ForegroundColor Cyan
 Write-Host "[$($Version)] Starting the Team Home App install process at $($dtStartTime.ToString('HH:mm:ss'))" -ForegroundColor Cyan
@@ -159,38 +164,24 @@ function LogStatus($Routine, $logType, $Detail) {
     $siteUrl - The url of the site. If $null, then there was an issue and the process will stop
         
 #>
-function Get-TASuppliedUrl($Url, $Lcid, $PSModule) {
+function Get-TASuppliedUrl($Url, $Lcid) {
     try {
         #Does the site already exist?
         # Connect to the tenant rootweb and check. This assumes the user has appropriate permissions to https://<tenant>.sharepoint.com
-
-        #***Temp until PnP PS module GA's***
-        if ($PSModule) {
-            $credentials = Get-Credential -Message "Please provide a user who has permissions to create a site collection on this tenant."
-            $siteOwner = $credentials.UserName.ToString()
-            Connect-PnPOnline -Url $Url.Substring(0, $Url.IndexOf('.com/') + 4) -Credentials $credentials
-        }
-        else {
-            Connect-PnPOnline -Url $Url.Substring(0, $Url.IndexOf('.com/') + 4) -UseWebLogin
-        }
+        LogStatus -Routine Get-TASuppliedUrl -logType Highlight -Detail "If prompted, please supply the credentials of a user account permissioned to create new site collections or has 'Owner' permission on the existing site."
+        Connect-PnPOnline -Url $Url.Substring(0, $Url.IndexOf('.com/') + 4) -UseWebLogin
 
         #This is used to pass back the url of the site to use. It will be empty if there is a problem
         $siteUrl = $null
 
-        #This will fail is the supplied url does not exist. We will try to create the site instead
-        $requestedSite = Get-PnPTenantSite -Url $Url -ErrorAction Stop
+        #This will fail if the supplied url does not exist. We will try to create the site instead
+        Get-PnPTenantSite -Url $Url -ErrorAction Stop | Out-Null
 
         #The site exists. Do we have permissions to it and is it the correct type/Lcid
-        #***Temp until PnP PS module GA's***
-        if ($PSModule) {
-            Connect-PnPOnline -Url $Url -Credentials $credentials -ErrorAction Stop
-        }
-        else {
-            Connect-PnPOnline -Url $Url -UseWebLogin
-        }
-
         try { 
-            #Do we have permission to access the rootweb
+            #Set context to the correct web
+            Connect-PnPOnline -Url $Url -UseWebLogin
+
             $web = Get-PnPWeb -Includes Language, WebTemplate -ErrorAction Stop
 
             #Managed to connect to the requested site
@@ -198,7 +189,7 @@ function Get-TASuppliedUrl($Url, $Lcid, $PSModule) {
 
             #If we get to this stage, then this means the site collection exists and we have privs to access it.
             # Now check to see if the site type is correct
-            if ($web.Language -eq $Lcid){
+            if ($web.Language -eq $Lcid) {
                 #It is in the correct language. Check the site type
                 if ($web.WebTemplate -eq 'SITEPAGEPUBLISHING') {
                     #It is the correct site type
@@ -219,19 +210,11 @@ function Get-TASuppliedUrl($Url, $Lcid, $PSModule) {
         }
     }
     catch {
-        LogStatus -Routine Get-SuppliedUrl -logType Information -Detail "The supplied Url [$($Url)] does not exist. Attempting to create it..."
-        if (!$siteOwner) {$siteOwner = Read-Host "Please enter your cloud identity that you are running this process as. i.e. <user>@$($url.Substring($url.IndexOf('://') + 3, ($url.IndexOf('.sharepoint.com/')) - ($url.IndexOf('://') + 3))).onmicrosoft.com"}
+        LogStatus -Routine Get-TASuppliedUrl -logType Information -Detail "The supplied Url [$($Url)] does not exist. Attempting to create it..."
+        $siteOwner = Read-Host "Please enter your cloud identity that you are running this process as to create the new site collection. i.e. <user>@$($url.Substring($url.IndexOf('://') + 3, ($url.IndexOf('.sharepoint.com/')) - ($url.IndexOf('://') + 3))).onmicrosoft.com"
         $siteUrl = New-PnPSite -Type CommunicationSite -Title "Microsoft Teams Home" -Url $Url -SiteDesign Showcase -Lcid $Lcid -Description "This site hosts the content for the Teams Home app" -Owner $siteOwner
-
-        #***Temp until PnP PS module GA's***
-        if ($PSModule) {
-            Connect-PnPOnline -Url $siteUrl -Credentials $credentials
-        }
-        else {
-            Connect-PnPOnline -Url $siteUrl -UseWebLogin
-        }
+        Connect-PnPOnline -Url $siteUrl -UseWebLogin
     }
-
     return $siteUrl
 }
 
@@ -259,6 +242,13 @@ function Get-TASuppliedUrl($Url, $Lcid, $PSModule) {
 function Update-TAManifest($manifestPath, $siteUrl) {
 
     $manifestJson = Get-Content $manifestPath | ConvertFrom-Json
+
+    #Update name and description
+    $manifestJson.packageName = $appName
+    $manifestJson.name.short = $appName
+    $manifestJson.description.short = $appName
+    $manifestJson.description.full = $appDescription
+
     
     #Update the Teams app staticTabs information
     ForEach ($staticTab in $manifestJson.staticTabs) {
@@ -340,7 +330,7 @@ function Get-TALogos($filePath) {
 ###
 
 #Check for SharePoint PnP module
-if (!(((Get-Module -ListAvailable SharePointPnPPowerShellOnline).Version -ge "3.26.2010.0") -or ((Get-Module -ListAvailable PnP.PowerShell).Version -ge "0.3.3"))) {
+if (!(((Get-Module -ListAvailable SharePointPnPPowerShellOnline).Version -ge "3.26.2010.0") -or ((Get-Module -ListAvailable PnP.PowerShell).Version -ge "1.2.0"))) {
     LogStatus -Routine Main -logType Fail -Detail "Please install the latest appropriate PnP PowerShell module. Visit https://github.com/pnp/powershell for further details."
 }
 else {
@@ -368,6 +358,15 @@ else {
         }
 
         #Get any further information needed before progressing
+        If ($UpdateTeamsAppDetails.IsPresent) {
+            #The user has requested to update the Teams app detail
+            $appName = Read-Host "Please enter your name for the Teams Home App (Examples: 'Home App', 'Contoso', etc.)"
+            $appDescription = Read-Host "Please enter your description for the Teams Home App (Examples: 'This is an application to demonstrate a home application for Microsoft Teams in English.')"
+        }
+        else {
+            $appName = "Teams Home"
+            $appDescription = "This is an application to demonstrate a home application for Microsoft Teams"
+        }
 
         ###
         #Logo management
@@ -388,13 +387,9 @@ else {
         #There was an issue with the logo file supplied or no logo file was supplied
         if (!$companyLogoUsed) {
             #We want to make a copy of the template logo files 
-            Copy-Item ".\$($Language)\TeamsApp\app-package\Color-template.png" -Destination ".\$($Language)\TeamsApp\app-package\Color.png"
-            Copy-Item ".\$($Language)\TeamsApp\app-package\Outline-template.png" -Destination ".\$($Language)\TeamsApp\app-package\Outline.png"
+            Copy-Item ".\$($Language)\TeamsApp\app-package\color-template.png" -Destination ".\$($Language)\TeamsApp\app-package\color.png"
+            Copy-Item ".\$($Language)\TeamsApp\app-package\outline-template.png" -Destination ".\$($Language)\TeamsApp\app-package\outline.png"
         }
-
-        #There are different cmdlets base don which PnP module is used. 
-        # This variable enables us to select the correct one.
-        if ((Get-Module -ListAvailable PnP.PowerShell) -ne $null) {$PnPModule = $true} else {$PnPModule = $false}
         
         ###
         #SPO section
@@ -406,8 +401,9 @@ else {
             try {
                 $TAManager = New-PnPUser -LoginName $TeamsHomeManagerEmail -ErrorAction Stop
 
-                #Run the correct cmdlet for the apporpiate PowerShell module used
-                if ($PnPModule) {
+                #Run the correct cmdlet for the apporpiate PowerShell module used.
+                # The PnP.PowerShell modules uses a differenet provisioning cmdlet
+                if ($null -ne (Get-Module -ListAvailable PnP.PowerShell)) {
                     Invoke-PnPSiteTemplate -Path ".\$($Language)\SharePointSite\template.xml" -Parameter @{"TAManagerTitle" = $TAManager.Title; "TAManagerEmail" = $TAManager.Email; "TASiteOwner" = $TAManager.LoginName; "TAAllUsers" = "c:0-.f|rolemanager|spo-grid-all-users/$(Get-PnPAuthenticationRealm)";}
                 }
                 else {
