@@ -337,35 +337,56 @@ else {
     #Get the root to copy the files to or else use the current location
     if (Test-Path -LiteralPath ".\$($Language)\SharePointSite\template.xml" -PathType Leaf) {
 
-        #Put the supplied url into a known state
-        $Url = $Url.TrimEnd('/').ToLower()
-        $Language = $Language.ToLower()
-
-        if ($Language -eq 'da') {
-            $Lcid = "1030"
-        }
-        elseif ($Language -eq 'sv') {
-            $Lcid = "1053"
-        }
-        elseif ($Language -eq 'fi') {
-            $Lcid = "1035"
-        }
-        elseif ($Language -eq 'nb') {
-            $Lcid = "1044"
-        }
-        else {
-            $Lcid = "1033"
-        }
-
         #Get any further information needed before progressing
         If ($UpdateTeamsAppDetails.IsPresent) {
             #The user has requested to update the Teams app detail
             $appName = Read-Host "Please enter your name for the Teams Home App (Examples: 'Home App', 'Contoso', etc.)"
             $appDescription = Read-Host "Please enter your description for the Teams Home App (Examples: 'This is an application to demonstrate a home application for Microsoft Teams in English.')"
         }
+
+        #Put the supplied url into a known state
+        $Url = $Url.TrimEnd('/').ToLower()
+        $Language = $Language.ToLower()
+
+        if ($Language -eq 'da') {
+            $Lcid = "1030"
+
+            if (!$appName) {
+                $appName = "Teams Home"
+                $appDescription = "This is an application to demonstrate a home application for Microsoft Teams"
+            }
+        }
+        elseif ($Language -eq 'sv') {
+            $Lcid = "1053"
+
+            if (!$appName) {
+                $appName = "Teams Hem"
+                $appDescription = "This is an application to demonstrate a home application for Microsoft Teams in Swedish."
+            }
+        }
+        elseif ($Language -eq 'fi') {
+            $Lcid = "1035"
+
+            if (!$appName) {
+                $appName = "Teams Home"
+                $appDescription = "This is an application to demonstrate a home application for Microsoft Teams"
+            }
+        }
+        elseif ($Language -eq 'nb') {
+            $Lcid = "1044"
+
+            if (!$appName) {
+                $appName = "Teams Hjem"
+                $appDescription = "Dette er en applikasjon for å demonstrere en hjem app for Teams på Norsk."
+            }
+        }
         else {
-            $appName = "Teams Home"
-            $appDescription = "This is an application to demonstrate a home application for Microsoft Teams"
+            $Lcid = "1033"
+
+            if (!$appName) {
+                $appName = "Teams Home"
+                $appDescription = "This is an application to demonstrate a home application for Microsoft Teams"
+            }
         }
 
         ###
