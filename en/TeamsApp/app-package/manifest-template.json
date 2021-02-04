@@ -3,7 +3,7 @@
     "manifestVersion": "1.7",
     "version": "1.0.0",
     "id": "0dae5abe-ae9f-42b3-9192-1cac99868ae0",
-    "packageName": "Teams Home",
+    "packageName": "<appName>",
     "developer": {
         "name": "Microsoft Consulting Services",
         "websiteUrl": "https://www.microsoft.com/en-us/msservices/consulting",
@@ -15,12 +15,12 @@
         "outline": "outline.png"
     },
     "name": {
-        "short": "Teams Home",
-        "full": "This is an application to demonstrate a home app for Teams"
+        "short": "<appName>",
+        "full": "This is a Teams App to demonstrate a Home app for Teams"
     },
     "description": {
-        "short": "Teams Home",
-        "full": "This is an application to demonstrate a home application for Microsoft Teams in English."
+        "short": "<appName>",
+        "full": "<appDescription>"
     },
     "accentColor": "#FFFFFF",
     "staticTabs": [
