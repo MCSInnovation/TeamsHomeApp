@@ -26,7 +26,8 @@ To install the Teams Home app:
   - "url" - Mandatory, the SPO site collection to host the help files.
   - "TeamHomeManagerEmail" - Mandatory, the Teams Home app contact person.
   - "Language" - Mandatory, currently choose between EN/DA/SV/FI/NB.
-  - "LogoFilePath" - Optional, the fulle file path to the logo .PNG file to use.
+  - "LogoFilePath" - Optional, the full file path to the logo .PNG file to use.
+  - "UpdateTeamsAppDetails" - Optional, provides the ability for theinstaller to control the application presentation name and description.
 
 ### Disclaimer ###
 **THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.**
